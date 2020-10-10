@@ -12,6 +12,7 @@ if ! [ -z "$(ls -A)" ]; then
 fi
 
 PROJECT_NAME=$1
+WORKSPACE_FOLDER=$(pwd)
 
 
 mkdir -p .vscode
@@ -23,6 +24,7 @@ touch src/CMakeLists.txt
 touch .gitignore
 touch src/main.cpp
 touch .vscode/tasks.json
+touch .vscode/launch.json
 
 
 
@@ -35,7 +37,7 @@ cat >> .vscode/tasks.json <<EOL
         {
             "label": "Build Project",
             "type": "shell",
-            "command": "cd build && cmake .. && make",
+            "command": "cd build && cmake -DCMAKE_BUILD_TYPE=Debug .. && make",
             "problemMatcher": [
                 "$gcc"
             ],
@@ -56,16 +58,43 @@ cat >> .vscode/tasks.json <<EOL
 }
 EOL
 
+cat >> .vscode/launch.json <<EOL
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "start (gdb)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "\${workspaceFolder}/build/src/${PROJECT_NAME}",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "\${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty printing",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        }
+    ]
+}
+EOL
+
 echo "build" > .gitignore
 
 
 cat >> CMakeLists.txt <<EOL
-project(§{PROJECT_NAME})
+project(${PROJECT_NAME})
 
 #C++ Standard 11
 if (CMAKE_VERSION VERSION_LESS "3.1")
     if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-        set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++11")
+        set (CMAKE_CXX_FLAGS "\${CMAKE_CXX_FLAGS} -std=gnu++11")
     endif ()
 else ()
     set (CMAKE_CXX_STANDARD 11)
@@ -82,12 +111,24 @@ cat >> README.md <<EOL
 
 ### Compile
 
+#### Debug Version
+Use VSCode Terminal->Run Build Task or 
+${README_HELPER}
+mkdir -p build
+cd build
+cmake -DCMAKE_BUILD_TYPE=Debug  ..
+make
+${README_HELPER}
+
+#### Release Version
+
 ${README_HELPER}
 mkdir -p build
 cd build
 cmake ..
 make
 ${README_HELPER}
+
 
 If successfull, the binary is at build/src
 EOL
